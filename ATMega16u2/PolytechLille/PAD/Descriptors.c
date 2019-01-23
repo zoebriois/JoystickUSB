@@ -7,8 +7,8 @@
 */
 
 /*
-  Copyright 2010  OBinou (obconseil [at] gmail [dot] com)
   Copyright 2017  Dean Camera (dean [at] fourwalledcubicle [dot] com)
+  Copyright 2010  Denver Gingerich (denver [at] ossguy [dot] com)
 
   Permission to use, copy, modify, distribute, and sell this
   software and its documentation for any purpose is hereby granted
@@ -29,25 +29,24 @@
   this software.
 */
 
-
 // Description de la configuration du matériel
 #include "Descriptors.h"
 
 /* Description de la structure du materiel. Le descripteurs est placé dans la mémoire FLASH.
 Ca décrit notamment la version USB, les endpoints */
-const USB_Descriptor_Device_t PROGMEM ATMega16u2_DeviceDescriptor =
+const USB_Descriptor_Device_t PROGMEM DeviceDescriptor =
 {
 	.Header                 = {.Size = sizeof(USB_Descriptor_Device_t), .Type = DTYPE_Device},
 
 	.USBSpecification       = VERSION_BCD(1,1,0),
-	.Class                  = USB_CSCP_VendorSpecificClass,
+	.Class                  = USB_CSCP_NoDeviceClass,
 	.SubClass               = USB_CSCP_NoDeviceSubclass,
 	.Protocol               = USB_CSCP_NoDeviceProtocol,
 
 	.Endpoint0Size          = FIXED_CONTROL_ENDPOINT_SIZE,
 
-	.VendorID               = 0x04B4,
-	.ProductID              = 0xFD11,
+	.VendorID               = 0x1604,
+	.ProductID              = 0x2305,
 	.ReleaseNumber          = VERSION_BCD(2,0,0),
 
 	.ManufacturerStrIndex   = STRING_ID_Manufacturer,
@@ -57,69 +56,114 @@ const USB_Descriptor_Device_t PROGMEM ATMega16u2_DeviceDescriptor =
 	.NumberOfConfigurations = FIXED_NUM_CONFIGURATIONS
 };
 
+
 /* Descripteur de la configuration de la structure.
-	Dans notre cas on va demander interfaces avec endpoints.  */
-const USB_Descriptor_Configuration_t PROGMEM RelayBoard_ConfigurationDescriptor =
+Dans notre cas on va demander 2 interfaces avec 4 endpoints en tout:
+- interface 1:
+- un pour le bouton du joystick (E/S 2),
+- les autres boutons (E/S 3 à 6),
+- interface 2:
+- un pour la led 13 (led L),
+- un pour les 5 autres leds (E/S 8 a 12). */
+const USB_Descriptor_Configuration_t PROGMEM ConfigurationDescriptor =
 {
 	.Config =
-		{
-			.Header                 = {.Size = sizeof(USB_Descriptor_Configuration_Header_t), .Type = DTYPE_Configuration},
+	{
+		.Header                 = {.Size = sizeof(USB_Descriptor_Configuration_Header_t), .Type = DTYPE_Configuration},
 
-			.TotalConfigurationSize = sizeof(USB_Descriptor_Configuration_t),
-			.TotalInterfaces        = 1,									// Nombre d'interfaces
+		.TotalConfigurationSize = sizeof(USB_Descriptor_Configuration_t),
+		.TotalInterfaces        = 2,
 
-			.ConfigurationNumber    = 1,
-			.ConfigurationStrIndex  = NO_DESCRIPTOR,
+		.ConfigurationNumber    = 1,
+		.ConfigurationStrIndex  = NO_DESCRIPTOR,
 
-			.ConfigAttributes       = USB_CONFIG_ATTR_RESERVED,
+		.ConfigAttributes       = (USB_CONFIG_ATTR_RESERVED | USB_CONFIG_ATTR_SELFPOWERED),
 
-			.MaxPowerConsumption    = USB_CONFIG_POWER_MA(500)
-		},
+		.MaxPowerConsumption    = USB_CONFIG_POWER_MA(500)
+	},
 
-	.RelayBoardInterface =
-		{
-			.Header                 = {.Size = sizeof(USB_Descriptor_Interface_t), .Type = DTYPE_Interface},
+	//Premiere interface
+	.ButtonInterface =
+	{
+		.Header                 = {.Size = sizeof(USB_Descriptor_Interface_t), .Type = DTYPE_Interface},
+		.InterfaceNumber        = 0,
+		.AlternateSetting       = 0,
+		.TotalEndpoints         = 2,
+		.Class                  = USB_CSCP_VendorSpecificClass,
+		.SubClass               = 0x00,
+		.Protocol               = 0x00,
+		.InterfaceStrIndex      = NO_DESCRIPTOR
+	},
 
-			.InterfaceNumber        = INTERFACE_ID_RelayBoard,
-			.AlternateSetting       = 0,
+	//--- Endpoints
+	.JoystickButtonEndpoint =
+	{
+		.Header                 = {.Size = sizeof(USB_Descriptor_Endpoint_t), .Type = DTYPE_Endpoint},
+		.EndpointAddress        = JOYSTICK_IN_1_EPADDR,
+		.Attributes             = (EP_TYPE_INTERRUPT | ENDPOINT_ATTR_NO_SYNC | ENDPOINT_USAGE_DATA),
+		.EndpointSize           = TUTORAT_EPSIZE,
+		.PollingIntervalMS      = 0x05
+	},
 
-			.TotalEndpoints         = 0,
+	.OthersButtonEndpoint =
+	{
+		.Header                 = {.Size = sizeof(USB_Descriptor_Endpoint_t), .Type = DTYPE_Endpoint},
+		.EndpointAddress        = JOYSTICK_IN_2_EPADDR,
+		.Attributes             = (EP_TYPE_INTERRUPT | ENDPOINT_ATTR_NO_SYNC | ENDPOINT_USAGE_DATA),
+		.EndpointSize           = TUTORAT_EPSIZE,
+		.PollingIntervalMS      = 0x05
+	},
 
-			.Class                  = USB_CSCP_VendorSpecificClass,
-			.SubClass               = 0x00,
-			.Protocol               = 0x00,
+	//Deuxieme interface
+	.LedInterface =
+	{
+		.Header                 = {.Size = sizeof(USB_Descriptor_Interface_t), .Type = DTYPE_Interface},
+		.InterfaceNumber        = 1,
+		.AlternateSetting       = 0x01,
+		.TotalEndpoints         = 2,
+		.Class                  = USB_CSCP_VendorSpecificClass,
+		.SubClass               = 0x00,
+		.Protocol               = 0x00,
+		.InterfaceStrIndex      = NO_DESCRIPTOR
+	},
 
-			.InterfaceStrIndex      = NO_DESCRIPTOR
-		},
+	//--- Endpoints
+	.Led13Endpoint =
+	{
+		.Header                 = {.Size = sizeof(USB_Descriptor_Endpoint_t), .Type = DTYPE_Endpoint},
+		.EndpointAddress        = LED_OUT_1_EPADDR,
+		.Attributes             = (EP_TYPE_INTERRUPT | ENDPOINT_ATTR_NO_SYNC | ENDPOINT_USAGE_DATA),
+		.EndpointSize           = TUTORAT_EPSIZE,
+		.PollingIntervalMS      = 0x05
+	},
+
+	.OthersLedEndpoint =
+	{
+		.Header                 = {.Size = sizeof(USB_Descriptor_Endpoint_t), .Type = DTYPE_Endpoint},
+		.EndpointAddress        = LED_OUT_2_EPADDR,
+		.Attributes             = (EP_TYPE_INTERRUPT | ENDPOINT_ATTR_NO_SYNC | ENDPOINT_USAGE_DATA),
+		.EndpointSize           = TUTORAT_EPSIZE,
+		.PollingIntervalMS      = 0x05
+	}
 };
 
 /** Language descriptor structure. This descriptor, located in FLASH memory, is returned when the host requests
  *  the string descriptor with index 0 (the first index). It is actually an array of 16-bit integers, which indicate
  *  via the language ID table available at USB.org what languages the device supports for its string descriptors.
  */
-const USB_Descriptor_String_t PROGMEM RelayBoard_LanguageString =
-{
-	.Header                 = {.Size = USB_STRING_LEN(1), .Type = DTYPE_String},
-
-	.UnicodeString          = {LANGUAGE_ID_ENG}
-};
+const USB_Descriptor_String_t PROGMEM LanguageString = USB_STRING_DESCRIPTOR_ARRAY(LANGUAGE_ID_ENG);
 
 /** Manufacturer descriptor string. This is a Unicode string containing the manufacturer's details in human readable
  *  form, and is read out upon request by the host when the appropriate string ID is requested, listed in the Device
  *  Descriptor.
  */
-const USB_Descriptor_String_t PROGMEM RelayBoard_ManufacturerString = USB_STRING_DESCRIPTOR(L"SISPM");
+const USB_Descriptor_String_t PROGMEM ManufacturerString = USB_STRING_DESCRIPTOR(L"Joystick et leds");
 
 /** Product descriptor string. This is a Unicode string containing the product's details in human readable form,
  *  and is read out upon request by the host when the appropriate string ID is requested, listed in the Device
  *  Descriptor.
  */
-const USB_Descriptor_String_t PROGMEM RelayBoard_ProductString = USB_STRING_DESCRIPTOR(L"RelayBoard");
-
-/** Serial number string. This is a Unicode string containing the device's unique serial number, expressed as a
- *  series of uppercase hexadecimal digits.
- */
-const USB_Descriptor_String_t PROGMEM RelayBoard_SerialString = USB_STRING_DESCRIPTOR(L"00001");
+const USB_Descriptor_String_t PROGMEM ProductString = USB_STRING_DESCRIPTOR(L"Projet Systeme");
 
 /** This function is called by the library when in device mode, and must be overridden (see library "USB Descriptors"
  *  documentation) by the application code so that the address and size of a requested descriptor can be given
@@ -137,37 +181,30 @@ uint16_t CALLBACK_USB_GetDescriptor(const uint16_t wValue,
 	const void* Address = NULL;
 	uint16_t    Size    = NO_DESCRIPTOR;
 
-	switch (DescriptorType)
-	{
+	switch (DescriptorType)	{
 		case DTYPE_Device:
-			Address = &RelayBoard_DeviceDescriptor;
+			Address = &DeviceDescriptor;
 			Size    = sizeof(USB_Descriptor_Device_t);
 			break;
 		case DTYPE_Configuration:
-			Address = &RelayBoard_ConfigurationDescriptor;
+			Address = &ConfigurationDescriptor;
 			Size    = sizeof(USB_Descriptor_Configuration_t);
 			break;
 		case DTYPE_String:
-			switch (DescriptorNumber)
-			{
+			switch (DescriptorNumber)	{
 				case STRING_ID_Language:
-					Address = &RelayBoard_LanguageString;
-					Size    = pgm_read_byte(&RelayBoard_LanguageString.Header.Size);
+					Address = &LanguageString;
+					Size    = pgm_read_byte(&LanguageString.Header.Size);
 					break;
 				case STRING_ID_Manufacturer:
-					Address = &RelayBoard_ManufacturerString;
-					Size    = pgm_read_byte(&RelayBoard_ManufacturerString.Header.Size);
+					Address = &ManufacturerString;
+					Size    = pgm_read_byte(&ManufacturerString.Header.Size);
 					break;
 				case STRING_ID_Product:
-					Address = &RelayBoard_ProductString;
-					Size    = pgm_read_byte(&RelayBoard_ProductString.Header.Size);
-					break;
-				case STRING_ID_Serial:
-					Address = &RelayBoard_SerialString;
-					Size    = pgm_read_byte(&RelayBoard_SerialString.Header.Size);
+					Address = &ProductString;
+					Size    = pgm_read_byte(&ProductString.Header.Size);
 					break;
 			}
-
 			break;
 	}
 

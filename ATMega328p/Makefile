@@ -4,7 +4,7 @@ export CC = avr-gcc
 export MCU = atmega328p
 export TARGET_ARCH = -mmcu=$(MCU)
 
-export CFLAGS =  -Wall -I. -DF_CPU=16000000 -Os #-g
+export CFLAGS = -Wall -I. -DF_CPU=16000000 -Os #-g
 export LDFLAGS = -g $(TARGET_ARCH) -lm -Wl,--gc-sections #      -Os
 
 TARGET = ATM328p

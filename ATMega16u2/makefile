@@ -19,7 +19,7 @@ all:
 	@echo Executing \"make $@\" on all LUFA library elements.
 	@echo
 	$(MAKE) -C LUFA $@
-	$(MAKE) -C PolytechLille $@
+	$(MAKE) -C PolytechLille/PAD $@
 
 	@echo
 	@echo LUFA \"make $@\" operation complete.
